@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Панель ОП — УМНИКС</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#141833; --navy-2:#1B1F3B; --indigo:#3B4DA0; --indigo-soft:#252C5C;
+    --lime:#CDDC39; --lime-2:#D4E157;
+    --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
+    --muted:rgba(255,255,255,.5); --muted-2:rgba(255,255,255,.72);
+    --green:#4CAF7D; --red:#E2565A; --amber:#E8B44A;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;color:#fff;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(1100px 600px at 88% -8%, rgba(59,77,160,.5), transparent 60%),
+      radial-gradient(700px 420px at 2% 4%, rgba(205,220,57,.06), transparent 60%),
+      var(--navy);
+    background-attachment:fixed;
+    min-height:100vh;
+  }
+  .mono{font-family:'JetBrains Mono',monospace}
+  .wrap{max-width:1200px;margin:0 auto;padding:22px 20px 70px}
+  a{color:var(--lime-2)}
+  h3{font-weight:600}
+
+  /* header */
+  .top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+  .logo{font-weight:800;font-size:19px;letter-spacing:.06em;display:flex;align-items:center;gap:11px}
+  .logo b{color:var(--lime);letter-spacing:.06em}
+  .logo em{font-style:normal;font-weight:400;letter-spacing:normal;font-size:14px;color:var(--muted);margin-left:4px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 14px var(--lime)}
+  .top-actions{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap}
+  .btn{background:rgba(255,255,255,.05);border:1px solid var(--line);color:#fff;padding:8px 14px;border-radius:10px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:.15s}
+  .btn:hover{background:rgba(255,255,255,.11);border-color:var(--line-2)}
+  .btn:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+  .btn.on{background:rgba(205,220,57,.14);border-color:rgba(205,220,57,.5);color:var(--lime)}
+  .btn.lime{background:var(--lime);border-color:var(--lime);color:var(--navy);font-weight:700}
+  .btn.lime:hover{background:var(--lime-2)}
+  .btn[disabled]{opacity:.45;cursor:default}
+
+  /* chips */
+  .chipbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:22px}
+  .chip{display:flex;align-items:center;gap:10px;padding:5px 16px 5px 5px;border-radius:99px;background:rgba(255,255,255,.04);border:1px solid var(--line);cursor:pointer;transition:.18s;color:var(--muted-2);font:inherit}
+  .chip:hover{background:rgba(255,255,255,.09);color:#fff}
+  .chip.on{background:linear-gradient(100deg,rgba(59,77,160,.9),rgba(59,77,160,.5));border-color:rgba(205,220,57,.45);color:#fff}
+  .chip img,.chip .ava{width:32px;height:32px;border-radius:50%;object-fit:cover;background:var(--indigo);display:grid;place-items:center;font-size:11px;font-weight:800;flex:0 0 auto}
+  .chip.on img,.chip.on .ava{box-shadow:0 0 0 2px var(--lime)}
+  .chip span{font-size:14px;font-weight:600;white-space:nowrap}
+
+  /* stats strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+  .stat{background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.02));border:1px solid var(--line);border-radius:16px;padding:15px 17px;position:relative;overflow:hidden}
+  .stat::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--indigo)}
+  .stat.accent::before{background:var(--lime)}
+  .stat .lbl{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;font-weight:600}
+  .stat .val{font-size:21px;font-weight:800;line-height:1.2;letter-spacing:-.01em}
+  .stat .sub{font-size:12px;color:var(--muted);margin-top:5px}
+  .stat .none{font-size:15px;font-weight:500;color:var(--muted)}
+  .stat .rows{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+  .stat .row{display:flex;align-items:baseline;gap:10px;font-size:13.5px;color:var(--muted-2)}
+  .stat .row span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .stat .row b{font-size:16px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+  .prog{height:6px;background:rgba(0,0,0,.4);border-radius:99px;overflow:hidden;margin-top:10px}
+  .prog i{display:block;height:100%;background:linear-gradient(90deg,var(--indigo),var(--lime));border-radius:99px;transition:width .6s}
+
+  /* card */
+  .card{background:linear-gradient(170deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid var(--line);border-radius:20px;overflow:hidden;backdrop-filter:blur(6px)}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.18);overflow-x:auto;align-items:center;padding-right:10px}
+  .tab{padding:14px 22px;font-size:14px;font-weight:500;color:var(--muted);background:none;border:0;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:inherit;transition:.15s}
+  .tab:hover{color:#fff}
+  .tab.on{color:#fff;border-bottom-color:var(--lime);font-weight:700}
+  .tabs .sel{margin-left:auto}
+  .pad{padding:26px 28px}
+
+  /* info */
+  .info{display:grid;grid-template-columns:220px 1fr;gap:30px}
+  .photo{width:100%;aspect-ratio:1;border-radius:18px;object-fit:cover;background:var(--indigo);display:grid;place-items:center;color:rgba(255,255,255,.4);font-size:44px;font-weight:800;box-shadow:0 14px 40px rgba(0,0,0,.3)}
+  .subj{color:var(--lime);font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px}
+  .name{font-size:34px;font-weight:800;margin:0 0 14px;letter-spacing:-.02em;line-height:1.1}
+  .slogan{font-size:17px;font-style:italic;color:rgba(255,255,255,.92);border-left:3px solid var(--lime);padding-left:14px;margin:0 0 18px;line-height:1.45}
+  .bio{color:var(--muted-2);line-height:1.65;font-size:15px;margin:0 0 22px;max-width:70ch}
+  .scores{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+  .score{background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:14px;padding:13px 20px;min-width:118px}
+  .score .lbl{font-size:10.5px;color:var(--muted);letter-spacing:.13em;text-transform:uppercase;font-weight:600}
+  .score .val{font-size:30px;font-weight:800;color:var(--lime);line-height:1.25;letter-spacing:-.02em}
+  .score .sub{font-size:11px;color:var(--muted)}
+  .h5{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .h5::before{content:"";width:14px;height:2px;background:var(--lime);border-radius:2px}
+  .style-list{list-style:none;margin:0 0 24px;padding:0;display:flex;flex-direction:column;gap:9px}
+  .style-list li{display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.5;color:rgba(255,255,255,.86)}
+  .style-list li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--lime);margin-top:7px;flex:0 0 auto}
+  .socials{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+  .socials a{font-size:13px;font-weight:500;color:#fff;text-decoration:none;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);transition:.15s}
+  .socials a:hover{background:rgba(255,255,255,.12);border-color:var(--line-2)}
+
+  /* reviews */
+  .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:11px;margin-bottom:20px}
+  .gal button{padding:0;border:1px solid var(--line);background:rgba(0,0,0,.28);border-radius:12px;overflow:hidden;cursor:zoom-in;aspect-ratio:3/4;transition:.18s}
+  .gal button:hover{transform:translateY(-3px);border-color:rgba(205,220,57,.5);box-shadow:0 10px 26px rgba(0,0,0,.35)}
+  .gal img{width:100%;height:100%;object-fit:cover;display:block}
+  .lightbox{position:fixed;inset:0;background:rgba(8,10,22,.94);display:grid;place-items:center;z-index:50;padding:34px;cursor:zoom-out}
+  .lightbox img{max-width:min(92vw,900px);max-height:88vh;border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.65)}
+
+  /* calendar */
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:9px}
+  .col-h{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);padding-bottom:9px;border-bottom:1px solid var(--line);margin-bottom:10px;font-weight:600}
+  .col-h.now{color:var(--lime);border-bottom-color:var(--lime)}
+  .slot{background:rgba(0,0,0,.25);border:1px solid var(--line);border-left:3px solid var(--indigo);border-radius:10px;padding:10px 11px;margin-bottom:9px;transition:.15s}
+  .slot:hover{background:rgba(0,0,0,.4);border-color:var(--line-2)}
+  .slot.trial{border-left-color:var(--lime);background:rgba(205,220,57,.06)}
+  .slot.now{box-shadow:0 0 0 1px rgba(232,180,74,.45),0 6px 22px rgba(0,0,0,.3)}
+  .slot.past{opacity:.55}
+  .slot .t{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .chiptag{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:5px;
+    background:rgba(232,180,74,.18);color:var(--amber);border:1px solid rgba(232,180,74,.4)}
+  .chiptag.past{background:rgba(255,255,255,.06);color:var(--muted);border-color:var(--line)}
+  .slot .t{font-size:14px;font-weight:800;color:var(--lime);letter-spacing:-.01em}
+  .slot .n{font-size:12.5px;line-height:1.4;margin-top:4px;font-weight:500}
+  .slot .topic{font-size:12.5px;line-height:1.4;margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.08);
+    color:var(--lime-2);font-weight:600}
+  .slot .topic.none{color:rgba(255,255,255,.28);font-weight:400;font-style:italic}
+  .slot .m{font-size:10.5px;color:var(--muted);margin-top:7px;letter-spacing:.06em;text-transform:uppercase}
+  .copy{margin-top:8px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--muted-2);
+    padding:7px 13px;border-radius:9px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap}
+  .copy:hover{background:rgba(205,220,57,.14);border-color:rgba(205,220,57,.45);color:var(--lime)}
+  .copy:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+  .copy.small{margin-top:7px;padding:5px 9px;font-size:11px;border-radius:7px}
+  .copy.ok{background:rgba(76,175,125,.18);border-color:rgba(76,175,125,.5);color:#8FE3B8}
+  .copy.fail{background:rgba(226,86,90,.16);border-color:rgba(226,86,90,.45);color:#FFC2C4}
+  .empty{color:var(--muted);font-size:14px;padding:34px 0;text-align:center}
+  .dash{color:rgba(255,255,255,.18);font-size:12px;padding:5px 2px}
+
+  /* timeline */
+  .tl{position:relative;padding-left:30px}
+  .tl::before{content:"";position:absolute;left:4px;top:16px;bottom:16px;width:1.5px;background:rgba(255,255,255,.12);border-radius:2px}
+  .tl-item{position:relative;padding:12px 0;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.05)}
+  .tl-item:last-child{border-bottom:0}
+  .tl-item::before{content:"";position:absolute;left:-30px;top:50%;transform:translateY(-50%);width:9px;height:9px;border-radius:50%;background:var(--navy);box-shadow:0 0 0 1.5px rgba(255,255,255,.22)}
+  .tl-item.done::before{background:var(--lime);box-shadow:0 0 0 1.5px var(--lime)}
+  .tl-item.today::before{background:var(--amber);box-shadow:0 0 0 1.5px var(--amber),0 0 0 6px rgba(232,180,74,.18)}
+  .tl-date{font-size:12.5px;font-weight:500;color:var(--muted);min-width:64px;letter-spacing:.01em}
+  .tl-topic{font-size:15px;font-weight:500;flex:1;min-width:180px}
+  .tl-item.done .tl-topic{color:var(--muted-2)}
+  .tl-item.today .tl-topic{font-weight:700}
+
+  .tag{display:inline-block;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:7px;letter-spacing:.06em;text-transform:uppercase;background:rgba(205,220,57,.14);color:var(--lime);border:1px solid rgba(205,220,57,.3)}
+  .tag.blue{background:rgba(59,77,160,.45);color:#B9C4FF;border-color:rgba(150,165,255,.32)}
+  .tag.amber{background:rgba(232,180,74,.16);color:var(--amber);border-color:rgba(232,180,74,.36)}
+  .tag.dim{background:rgba(255,255,255,.05);color:var(--muted);border-color:var(--line)}
+
+  /* links */
+  .link-row{display:flex;align-items:center;gap:14px;background:rgba(0,0,0,.24);border:1px solid var(--line);border-left:3px solid var(--indigo);border-radius:12px;padding:13px 16px;margin-bottom:9px;flex-wrap:wrap;transition:.15s}
+  .link-row:hover{background:rgba(0,0,0,.38)}
+  .link-row.trial{border-left-color:var(--lime)}
+  .link-row .w{font-size:13px;color:var(--muted);min-width:104px;font-family:'JetBrains Mono',monospace}
+  .link-row .c{font-size:14.5px;font-weight:600;flex:1;min-width:150px}
+
+  /* tables + conversion */
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:0 12px 11px;border-bottom:1px solid var(--line);font-weight:600}
+  td{padding:12px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top}
+  tr:hover td{background:rgba(255,255,255,.03)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:28px}
+  .kpi{background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.02));border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+  .kpi .lbl{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:600}
+  .kpi .val{font-size:30px;font-weight:800;line-height:1;letter-spacing:-.02em}
+  .kpi .sub{font-size:12px;color:var(--muted);margin-top:6px}
+  .bar-row{display:grid;grid-template-columns:160px 1fr 64px;align-items:center;gap:12px;margin-bottom:9px}
+  .bar-lbl{font-size:13px;color:rgba(255,255,255,.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar-bg{height:22px;background:rgba(0,0,0,.32);border-radius:7px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:7px;transition:width .5s}
+  .bar-val{font-size:13px;font-weight:700;text-align:right}
+  .sec{margin-bottom:32px}
+  .sec h3{font-size:15px;margin:0 0 15px}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+  .sel{background:rgba(0,0,0,.3);border:1px solid var(--line);color:#fff;border-radius:10px;padding:8px 11px;font:inherit;font-size:13px;cursor:pointer}
+
+  .note{background:rgba(232,180,74,.09);border:1px solid rgba(232,180,74,.28);color:#F0D9A8;border-radius:12px;padding:13px 15px;font-size:13px;line-height:1.55;margin-bottom:18px}
+  .note.err{background:rgba(226,86,90,.11);border-color:rgba(226,86,90,.33);color:#FFC2C4}
+  .cfg label{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px}
+  .cfg input{width:100%;background:rgba(0,0,0,.32);border:1px solid var(--line);color:#fff;border-radius:10px;padding:10px 12px;font:inherit;font-size:13px}
+  .shot .top-actions,.shot .chipbar,.shot .no-shot{display:none!important}
+  .exit-shot{position:fixed;right:16px;bottom:16px;z-index:60;background:rgba(20,24,51,.9);border:1px solid var(--line-2);
+    color:var(--muted-2);padding:9px 15px;border-radius:99px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+    backdrop-filter:blur(8px);box-shadow:0 8px 26px rgba(0,0,0,.4);transition:.15s;opacity:.55}
+  .exit-shot:hover{opacity:1;color:#fff;border-color:var(--lime)}
+  @media(max-width:860px){
+    .info{grid-template-columns:1fr}
+    .photo{max-width:190px}
+    .cal{grid-template-columns:1fr}
+    .col-h{margin-top:14px}
+    .name{font-size:28px}
+  }
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const {useState,useEffect,useMemo} = React;
+
+/* ================= КОНФИГ ================= */
+const DEFAULT_SHEET_ID = "1LgxljcGAwHvlLe-XtKVczMnEbStCXitZUdgc3jMYH6A";
+const ADMIN_PASSWORD   = "umnix2025";
+const TABS = {teachers:"преподы", schedule:"schedule", topics:"topics", leads:"trial_leads"};
+const DAYS = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+const MON = ["янв","фев","мар","апр","мая","июн","июл","авг","сен","окт","ноя","дек"];
+
+/* ================= ХЕЛПЕРЫ ================= */
+const norm = s => (s==null?"":String(s)).trim().toLowerCase();
+const pct  = (a,b) => b>0 ? Math.round(a/b*100) : 0;
+const extractId = input => {
+  const s=(input||"").trim();
+  const m=s.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return m?m[1]:s;
+};
+/* Диск отдаёт картинки с lh3 — этот домен разрешает рисовать их на canvas */
+const imgUrl = u => {
+  const s=(u||"").trim();
+  if(!s) return "";
+  const m=s.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9-_]+)/);
+  return m ? `https://lh3.googleusercontent.com/d/${m[1]}=w1200` : s;
+};
+const splitList = v => (v||"").split(/[;\n]+/).map(x=>x.trim()).filter(Boolean);
+const initials = n => (n||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase();
+const isTrial  = t => norm(t).startsWith("проб");
+const todayISO = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+const inHours = mins => mins<60 ? `${mins} мин` : `${Math.round(mins/60)} ч`;
+const humanDate = iso => {
+  const m=(iso||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${+m[3]} ${MON[+m[2]-1]}` : (iso||"");
+};
+const pick = (row,...names)=>{ for(const n of names){const v=row[n]; if(v!=null&&String(v).trim()!=="") return String(v).trim();} return ""; };
+
+const isYes    = v => ["1","да","yes","true","+","пришёл","пришел","дошёл","дошел"].includes(norm(v));
+const isBuy    = v => ["куплено","оплата","оплатил","оплачено","купил","продажа","won","success"].includes(norm(v));
+const isRefuse = v => ["отказ","отказался","слив","lost","refusal","не купил"].includes(norm(v));
+const maskPhone = p => { const d=(p||"").replace(/\D/g,""); return d.length<4?p:"+"+d.slice(0,1)+" ••• ••• "+d.slice(-2); };
+
+/* ================= ЧТЕНИЕ ТАБЛИЦЫ (JSONP — работает и из file://) ================= */
+let jsonpSeq = 0;
+const p2 = n => String(n).padStart(2,"0");
+
+/* Sheets хранит время как дату от 30.12.1899 — тип колонки решает, что это на самом деле */
+function cellValue(cell,type){
+  const v=cell.v;
+  if(v===null||v===undefined) return "";
+  if(type==="timeofday" && Array.isArray(v)) return `${p2(v[0]||0)}:${p2(v[1]||0)}`;
+  if(typeof v==="string"){
+    const m=v.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+))?/);
+    if(m){
+      const y=+m[1];
+      if(y<1900) return `${p2(m[4]||0)}:${p2(m[5]||0)}`;   // это время, а не дата
+      return `${y}-${p2(+m[2]+1)}-${p2(m[3])}`;
+    }
+  }
+  if(cell.f!=null) return String(cell.f);
+  return String(v);
+}
+function gvizToRows(table){
+  const cols=(table.cols||[]);
+  const head=cols.map((c,i)=>String(c.label||c.id||i).trim().toLowerCase());
+  return (table.rows||[]).map(r=>{
+    const o={};
+    head.forEach((h,i)=>{ const c=r.c&&r.c[i]; o[h]= c ? cellValue(c,cols[i]&&cols[i].type) : ""; });
+    return o;
+  }).filter(o=>Object.values(o).some(v=>v!==""));
+}
+function loadSheet(id,name){
+  return new Promise((resolve,reject)=>{
+    const cb="__gviz_cb_"+(++jsonpSeq);
+    const s=document.createElement("script");
+    const timer=setTimeout(()=>{cleanup();reject(new Error(`Вкладка «${name}»: таблица не ответила за 15 секунд.`));},15000);
+    function cleanup(){clearTimeout(timer);try{delete window[cb];}catch(e){window[cb]=undefined;}s.remove();}
+    window[cb]=resp=>{
+      cleanup();
+      if(!resp||resp.status==="error"){
+        const msg=resp&&resp.errors?resp.errors.map(e=>e.detailed_message||e.message||"").join("; ").replace(/<[^>]+>/g,""):"не удалось прочитать ответ";
+        reject(new Error(`Вкладка «${name}»: ${msg}`)); return;
+      }
+      resolve(gvizToRows(resp.table||{}));
+    };
+    s.onerror=()=>{cleanup();reject(new Error(`Вкладка «${name}»: недоступна. Проверь доступ по ссылке и название вкладки.`));};
+    s.src=`https://docs.google.com/spreadsheets/d/${extractId(id)}/gviz/tq?tqx=out:json;responseHandler:${cb}&headers=1&sheet=${encodeURIComponent(name)}`;
+    document.head.appendChild(s);
+  });
+}
+
+/* ================= НОРМАЛИЗАЦИЯ ================= */
+const teacherFromRow = r => ({
+  id:pick(r,"teacher_id","id"),
+  name:pick(r,"name","имя","фио")||"Без имени",
+  subject:pick(r,"subject","предмет"),
+  slogan:pick(r,"slogan","слоган","девиз"),
+  photo:imgUrl(pick(r,"photo","фото")),
+  bio:pick(r,"bio","описание","о себе"),
+  oge:pick(r,"score_oge","огэ","балл_огэ"),
+  ege:pick(r,"score_ege","егэ","балл_егэ"),
+  style:splitList(pick(r,"style","стиль","как ведёт","как ведет")),
+  reviews:splitList(pick(r,"reviews","отзывы","review_images")).map(imgUrl),
+  tg:pick(r,"telegram","tg"),
+  vk:pick(r,"vk"),
+});
+const scheduleFromRow = r => ({
+  teacher:pick(r,"teacher_id","id"),
+  course:pick(r,"course","курс","title","название"),
+  day:pick(r,"day","день"),
+  time:pick(r,"time","время").slice(0,5),
+  type:pick(r,"type","тип","format","формат"),
+  link:pick(r,"link","ссылка"),
+});
+const topicFromRow = r => ({
+  teacher:pick(r,"teacher_id","id"),
+  course:pick(r,"course","курс"),
+  date:pick(r,"date","дата"),
+  topic:pick(r,"topic","тема","title","название"),
+  code:pick(r,"task_code","задание","код"),
+  status:pick(r,"status","статус"),
+});
+const leadFromRow = r => ({
+  teacher:pick(r,"teacher_id","id"),
+  date:pick(r,"trial_date","дата","date"),
+  name:pick(r,"name","имя"),
+  phone:pick(r,"phone","телефон"),
+  attended:pick(r,"attended","дошёл","дошел","пришёл"),
+  status:pick(r,"status","статус"),
+  reason:pick(r,"reason","причина"),
+  source:pick(r,"source","источник"),
+});
+
+/* Статусы тем: как в таблице — Прошли / Сегодня / Позже. Если статуса нет, решает дата. */
+const DONE_WORDS  = ["прошли","прошло","прошёл","прошел","пройдено","пройдена","done","+","да"];
+const TODAY_WORDS = ["сегодня","идёт","идет","сейчас"];
+function topicState(t){
+  const s=norm(t.status);
+  if(s){
+    if(DONE_WORDS.includes(s))  return "done";
+    if(TODAY_WORDS.includes(s)) return "today";
+    return "next";
+  }
+  if(t.date){
+    if(t.date <  todayISO()) return "done";
+    if(t.date === todayISO()) return "today";
+  }
+  return "next";
+}
+const STATE_LABEL = {done:["прошли","tag"], today:["сегодня","tag amber"], next:["позже","tag dim"]};
+
+/* ISO-дата этого дня недели в текущей неделе (неделя считается с понедельника) */
+function weekDateISO(dayLabel){
+  const dow=DAYS.findIndex(d=>norm(d)===norm(dayLabel).slice(0,2));
+  if(dow<0) return "";
+  const now=new Date();
+  const mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
+  const d=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+dow);
+  return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+}
+
+const slotMinutes = s => {
+  if(!/^\d{1,2}:\d{2}/.test(s.time||"")) return null;
+  const [h,m]=s.time.split(":").map(Number);
+  return h*60+m;
+};
+const slotDow = s => DAYS.findIndex(d=>norm(d)===norm(s.day).slice(0,2));
+const isToday = s => slotDow(s)===(new Date().getDay()+6)%7;
+/* урок уже начался? */
+const isPast = s => {
+  const now=new Date(), mins=slotMinutes(s);
+  return isToday(s) && mins!==null && mins <= now.getHours()*60+now.getMinutes();
+};
+
+function nextLesson(slots){
+  if(!slots.length) return null;
+  const now=new Date();
+  const curDow=(now.getDay()+6)%7, curMin=now.getHours()*60+now.getMinutes();
+  const minsLeftToday=1440-curMin;
+  let best=null,bestDelta=Infinity;
+  slots.forEach(s=>{
+    const dow=slotDow(s), mins=slotMinutes(s);
+    if(dow<0||mins===null) return;
+    let delta=(dow-curDow)*1440+(mins-curMin);
+    if(delta<0) delta+=7*1440;
+    if(delta<bestDelta){bestDelta=delta;best=s;}
+  });
+  if(!best) return null;
+  const when = bestDelta<minsLeftToday ? "Сегодня"
+             : bestDelta<minsLeftToday+1440 ? "Завтра"
+             : DAYS[slotDow(best)];
+  return {...best, when, delta:bestDelta, soon:bestDelta<minsLeftToday};
+}
+
+/* ================= КОМПОНЕНТЫ ================= */
+/* Копирование работает и там, где браузер не даёт доступ к буферу напрямую */
+async function copyText(text){
+  try{
+    if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(text); return true; }
+  }catch(e){}
+  try{
+    const ta=document.createElement("textarea");
+    ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    const ok=document.execCommand("copy"); ta.remove(); return ok;
+  }catch(e){ return false; }
+}
+function CopyBtn({link,label="Скопировать ссылку",small}){
+  const [st,setSt]=useState("");
+  if(!link) return null;
+  const go=async e=>{
+    e.stopPropagation();
+    const ok=await copyText(link);
+    setSt(ok?"ok":"fail");
+    setTimeout(()=>setSt(""),1800);
+  };
+  return (
+    <button className={"copy"+(small?" small":"")+(st?" "+st:"")} onClick={go} title={link}>
+      {st==="ok"?"Скопировано ✓":st==="fail"?"Не вышло — ПКМ":label}
+    </button>
+  );
+}
+
+function Bar({label,value,max,color,suffix=""}){
+  return (
+    <div className="bar-row">
+      <div className="bar-lbl" title={label}>{label}</div>
+      <div className="bar-bg"><div className="bar-fill" style={{width:(max>0?value/max*100:0)+"%",background:color}}/></div>
+      <div className="bar-val">{value}{suffix}</div>
+    </div>
+  );
+}
+
+function Stats({stats}){
+  return (
+    <div className="strip">
+      <div className="stat accent">
+        <div className="lbl">Ближайшее занятие</div>
+        {stats.next
+          ? <><div className="val">
+                {stats.next.when}, {stats.next.time}
+                {stats.next.soon && <span className="tag amber" style={{marginLeft:8,verticalAlign:"middle"}}>через {inHours(stats.next.delta)}</span>}
+              </div>
+              <div className="sub">{stats.next.course}{isTrial(stats.next.type)?" · пробный":""}</div></>
+          : <div className="none">нет в расписании</div>}
+      </div>
+      <div className="stat accent">
+        <div className="lbl">Программа</div>
+        {stats.total
+          ? <><div className="val">{stats.done} из {stats.total}</div>
+              <div className="prog"><i style={{width:pct(stats.done,stats.total)+"%"}}/></div>
+              <div className="sub">{pct(stats.done,stats.total)}% тем пройдено</div></>
+          : <div className="none">нет данных</div>}
+      </div>
+      <div className="stat">
+        <div className="lbl">Основные · в неделю</div>
+        {stats.byCourse.length
+          ? <div className="rows">
+              {stats.byCourse.map(([c,n])=>(
+                <div className="row" key={c}><span>{c}</span><b>{n}</b></div>
+              ))}
+            </div>
+          : <div className="none">нет основных</div>}
+      </div>
+      <div className="stat accent">
+        <div className="lbl">Пробные на этой неделе</div>
+        <div className="val">{stats.trials}</div>
+        {stats.trialCourses.length
+          ? <div className="sub">{stats.trialCourses.join(" · ")}</div>
+          : <div className="sub">пробных нет</div>}
+      </div>
+      <div className="stat">
+        <div className="lbl">Следующая тема</div>
+        <div className="val" style={{fontSize:16,fontWeight:600,lineHeight:1.35}}>{stats.nextTopic||"—"}</div>
+        {stats.nextDate && <div className="sub">{humanDate(stats.nextDate)}</div>}
+      </div>
+    </div>
+  );
+}
+
+function InfoTab({t,onZoom}){
+  return (
+    <div className="info">
+      <div>{t.photo?<img className="photo" src={t.photo} alt={t.name}/>:<div className="photo">{initials(t.name)}</div>}</div>
+      <div>
+        {t.subject && <div className="subj">{t.subject}</div>}
+        <h2 className="name">{t.name}</h2>
+        {t.slogan && <p className="slogan">{t.slogan}</p>}
+        {t.bio && <p className="bio">{t.bio}</p>}
+        {(t.oge||t.ege) &&
+          <div className="scores">
+            {t.oge && <div className="score"><div className="lbl">ОГЭ</div><div className="val">{t.oge}</div><div className="sub">средний балл</div></div>}
+            {t.ege && <div className="score"><div className="lbl">ЕГЭ</div><div className="val">{t.ege}</div><div className="sub">средний балл</div></div>}
+          </div>}
+        {t.style.length>0 && <>
+          <h4 className="h5">Как ведёт</h4>
+          <ul className="style-list">{t.style.map((s,i)=><li key={i}>{s}</li>)}</ul>
+        </>}
+        {t.reviews.length>0 && <>
+          <h4 className="h5">Отзывы · {t.reviews.length}</h4>
+          <div className="gal">
+            {t.reviews.map((r,i)=>(
+              <button key={i} onClick={()=>onZoom(r)} title="Открыть во весь экран">
+                <img src={r} alt={"Отзыв "+(i+1)} loading="lazy"/>
+              </button>
+            ))}
+          </div>
+        </>}
+        {(t.tg||t.vk) &&
+          <div className="socials">
+            {t.tg && <a href={t.tg} target="_blank" rel="noreferrer">Telegram ↗</a>}
+            {t.vk && <a href={t.vk} target="_blank" rel="noreferrer">VK ↗</a>}
+          </div>}
+      </div>
+    </div>
+  );
+}
+
+function ScheduleTab({slots,topics}){
+  const topicFor = s => {
+    const date=weekDateISO(s.day);
+    if(!date) return null;
+    return topics.find(t=>t.date===date && (!s.course||!t.course||norm(t.course)===norm(s.course))) || null;
+  };
+  if(!slots.length) return <div className="empty">Занятий нет.</div>;
+  const today=DAYS[(new Date().getDay()+6)%7];
+  return (
+    <div className="cal">
+      {DAYS.map(d=>{
+        const day=slots.filter(s=>norm(s.day).slice(0,2)===norm(d)).sort((a,b)=>a.time.localeCompare(b.time));
+        return (
+          <div key={d}>
+            <div className={"col-h"+(d===today?" now":"")}>{d}{d===today?" · сегодня":""}</div>
+            {day.length===0
+              ? <div className="dash">—</div>
+              : day.map((s,i)=>(
+                <div className={"slot"+(isTrial(s.type)?" trial":"")+(d===today?(isPast(s)?" past":" now"):"")} key={i}>
+                  <div className="t">
+                    {s.time}
+                    {d===today && <span className={"chiptag"+(isPast(s)?" past":"")}>{isPast(s)?"прошёл":"сегодня"}</span>}
+                  </div>
+                  <div className="n">{s.course}</div>
+                  {!isTrial(s.type) && (()=>{ const tp=topicFor(s); return tp
+                    ? <div className="topic">{tp.topic}</div>
+                    : <div className="topic none">тема не указана</div>; })()}
+                  <div className="m">{isTrial(s.type)?"Пробный":"Основной"}</div>
+                  <CopyBtn link={s.link} label="Копировать" small/>
+                </div>
+              ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TopicsTab({topics}){
+  if(!topics.length) return <div className="empty">Тем нет.</div>;
+  const done=topics.filter(t=>topicState(t)==="done").length;
+  return (
+    <>
+      <div style={{marginBottom:22}}>
+        <Bar label={`Пройдено ${done} из ${topics.length}`} value={pct(done,topics.length)} max={100} color="linear-gradient(90deg,var(--indigo),var(--lime))" suffix="%"/>
+      </div>
+      <div className="tl">
+        {topics.map((t,i)=>{
+          const st=topicState(t), [label,cls]=STATE_LABEL[st];
+          return (
+            <div className={"tl-item "+st} key={i}>
+              <div className="tl-date">{humanDate(t.date)}</div>
+              <div className="tl-topic">{t.topic}{t.code && <span style={{color:"var(--muted)",fontSize:12}}> · {t.code}</span>}</div>
+              <span className={cls}>{label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function LinksTab({slots}){
+  const main=slots.filter(s=>!isTrial(s.type)&&s.link);
+  const trial=slots.filter(s=>isTrial(s.type)&&s.link);
+  if(!main.length&&!trial.length) return <div className="empty">Ссылок нет.</div>;
+  const row=(s,i)=>(
+    <div className={"link-row"+(isTrial(s.type)?" trial":"")} key={i}>
+      <div className="w">{s.day}, {s.time}</div>
+      <div className="c">{s.course}</div>
+      <CopyBtn link={s.link}/>
+    </div>
+  );
+  return (
+    <>
+      {trial.length>0 && <div className="sec">
+        <h3><span className="tag">Пробные</span> <span style={{color:"var(--muted)",fontWeight:400,fontSize:13,marginLeft:6}}>эти шлём лидам</span></h3>
+        {trial.map(row)}
+      </div>}
+      {main.length>0 && <div className="sec">
+        <h3><span className="tag blue">Основные</span> <span style={{color:"var(--muted)",fontWeight:400,fontSize:13,marginLeft:6}}>для оплативших</span></h3>
+        {main.map(row)}
+      </div>}
+    </>
+  );
+}
+
+function Conversion({rows,shot,nameOf}){
+  const [teacher,setTeacher]=useState("all");
+  const [from,setFrom]=useState(""); const [to,setTo]=useState("");
+  const ids=useMemo(()=>[...new Set(rows.map(r=>r.teacher))].filter(Boolean),[rows]);
+  if(!rows.length) return <div className="empty">Лидов нет.</div>;
+
+  const data=rows.filter(r=>{
+    if(teacher!=="all"&&norm(r.teacher)!==norm(teacher)) return false;
+    if(from&&r.date<from) return false;
+    if(to&&r.date>to) return false;
+    return true;
+  });
+  const leads=data.length;
+  const came=data.filter(r=>isYes(r.attended)).length;
+  const bought=data.filter(r=>isBuy(r.status)).length;
+  const refused=data.filter(r=>isRefuse(r.status)).length;
+
+  const byTeacher=ids.map(id=>{
+    const d=data.filter(r=>norm(r.teacher)===norm(id));
+    const c=d.filter(r=>isYes(r.attended)).length,b=d.filter(r=>isBuy(r.status)).length;
+    return {id,leads:d.length,came:c,bought:b,cr:pct(b,d.length)};
+  }).filter(x=>x.leads>0);
+  const dates=[...new Set(data.map(r=>r.date).filter(Boolean))].sort();
+  const byDate=dates.map(d=>{
+    const dd=data.filter(r=>r.date===d);
+    return {date:d,leads:dd.length,came:dd.filter(r=>isYes(r.attended)).length,bought:dd.filter(r=>isBuy(r.status)).length};
+  });
+  const reasons={}; data.filter(r=>isRefuse(r.status)&&r.reason).forEach(r=>reasons[r.reason]=(reasons[r.reason]||0)+1);
+  const reasonList=Object.entries(reasons).sort((a,b)=>b[1]-a[1]);
+  const sources={}; data.filter(r=>r.source).forEach(r=>sources[r.source]=(sources[r.source]||0)+1);
+  const sourceList=Object.entries(sources).sort((a,b)=>b[1]-a[1]);
+
+  return (
+    <div>
+      {!shot &&
+        <div className="filters">
+          <select className="sel" value={teacher} onChange={e=>setTeacher(e.target.value)}>
+            <option value="all">Все преподаватели</option>
+            {ids.map(n=><option key={n} value={n}>{nameOf(n)}</option>)}
+          </select>
+          <input className="sel" type="date" value={from} onChange={e=>setFrom(e.target.value)}/>
+          <input className="sel" type="date" value={to} onChange={e=>setTo(e.target.value)}/>
+          {(from||to||teacher!=="all") && <button className="btn" onClick={()=>{setTeacher("all");setFrom("");setTo("");}}>Сбросить</button>}
+        </div>}
+
+      <div className="kpis">
+        <div className="kpi"><div className="lbl">Лиды</div><div className="val">{leads}</div><div className="sub">записей на пробник</div></div>
+        <div className="kpi"><div className="lbl">Дошли</div><div className="val" style={{color:"var(--lime)"}}>{came}</div><div className="sub">{pct(came,leads)}% от лидов</div></div>
+        <div className="kpi"><div className="lbl">Купили</div><div className="val" style={{color:"var(--green)"}}>{bought}</div><div className="sub">{pct(bought,came)}% от дошедших</div></div>
+        <div className="kpi"><div className="lbl">Отказы</div><div className="val" style={{color:"var(--red)"}}>{refused}</div><div className="sub">{pct(refused,leads)}% от лидов</div></div>
+        <div className="kpi"><div className="lbl">CR общий</div><div className="val" style={{color:"var(--lime)"}}>{pct(bought,leads)}%</div><div className="sub">лид → оплата</div></div>
+      </div>
+
+      <div className="sec">
+        <h3>Воронка</h3>
+        <Bar label="Записались" value={leads} max={leads} color="var(--indigo)"/>
+        <Bar label="Дошли" value={came} max={leads} color="var(--lime)"/>
+        <Bar label="Купили" value={bought} max={leads} color="var(--green)"/>
+        <Bar label="Отказались" value={refused} max={leads} color="var(--red)"/>
+      </div>
+
+      {byTeacher.length>0 &&
+        <div className="sec"><h3>По преподавателям</h3>
+          <table>
+            <thead><tr><th>Преподаватель</th><th>Лиды</th><th>Дошли</th><th>Купили</th><th>CR</th></tr></thead>
+            <tbody>{byTeacher.map(t=>(
+              <tr key={t.id}>
+                <td>{nameOf(t.id)}</td><td>{t.leads}</td>
+                <td>{t.came} <span style={{color:"var(--muted)",fontSize:12}}>({pct(t.came,t.leads)}%)</span></td>
+                <td>{t.bought}</td>
+                <td style={{fontWeight:700,color:t.cr>=30?"var(--lime)":t.cr>=15?"var(--amber)":"var(--red)"}}>{t.cr}%</td>
+              </tr>))}
+            </tbody>
+          </table>
+        </div>}
+
+      {byDate.length>0 &&
+        <div className="sec"><h3>По датам пробников</h3>
+          <table>
+            <thead><tr><th>Дата</th><th>Лиды</th><th>Дошли</th><th>Купили</th><th>CR</th></tr></thead>
+            <tbody>{byDate.map(d=>(
+              <tr key={d.date}>
+                <td className="mono">{d.date}</td><td>{d.leads}</td>
+                <td>{d.came} <span style={{color:"var(--muted)",fontSize:12}}>({pct(d.came,d.leads)}%)</span></td>
+                <td>{d.bought}</td><td style={{fontWeight:700}}>{pct(d.bought,d.leads)}%</td>
+              </tr>))}
+            </tbody>
+          </table>
+        </div>}
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:26}}>
+        {reasonList.length>0 && <div className="sec"><h3>Причины отказов</h3>
+          {reasonList.map(([r,n])=><Bar key={r} label={r} value={n} max={reasonList[0][1]} color="var(--red)"/>)}</div>}
+        {sourceList.length>0 && <div className="sec"><h3>Источники</h3>
+          {sourceList.map(([s,n])=><Bar key={s} label={s} value={n} max={sourceList[0][1]} color="var(--indigo)"/>)}</div>}
+      </div>
+    </div>
+  );
+}
+
+function Leads({rows,admin,nameOf}){
+  if(!rows.length) return <div className="empty">Лидов нет.</div>;
+  return (
+    <table>
+      <thead><tr><th>Дата</th><th>Преподаватель</th><th>Имя</th><th>Телефон</th><th>Дошёл</th><th>Статус</th><th>Причина</th><th>Источник</th></tr></thead>
+      <tbody>
+        {rows.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map((r,i)=>(
+          <tr key={i}>
+            <td className="mono" style={{fontSize:12}}>{r.date}</td>
+            <td>{nameOf(r.teacher)}</td><td>{r.name}</td>
+            <td className="mono" style={{fontSize:12}}>{admin?r.phone:maskPhone(r.phone)}</td>
+            <td>{isYes(r.attended)?"🟢":"⚪️"}</td>
+            <td>{isBuy(r.status)?<span style={{color:"var(--green)"}}>{r.status}</span>
+              :isRefuse(r.status)?<span style={{color:"var(--red)"}}>{r.status}</span>
+              :<span style={{color:"var(--muted)"}}>{r.status||"—"}</span>}</td>
+            <td style={{color:"var(--muted)",fontSize:13}}>{r.reason}</td>
+            <td style={{color:"var(--muted)",fontSize:13}}>{r.source}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/* ================= ПРИЛОЖЕНИЕ ================= */
+function App(){
+  const [sheetId,setSheetId]=useState(()=>extractId(localStorage.getItem("umnix_sheet_id")||DEFAULT_SHEET_ID));
+  const [view,setView]=useState("teachers");
+  const [tid,setTid]=useState(""); const [course,setCourse]=useState("all");
+  const [tab,setTab]=useState("info");
+  const [shot,setShot]=useState(false); const [admin,setAdmin]=useState(false);
+  const [zoom,setZoom]=useState(null);
+  const [raw,setRaw]=useState({teachers:[],schedule:[],topics:[],leads:[]});
+  const [state,setState]=useState({loading:true,error:null});
+  const [tick,setTick]=useState(0);
+
+  useEffect(()=>{
+    let live=true; setState({loading:true,error:null});
+    Promise.all([
+      loadSheet(sheetId,TABS.teachers).catch(e=>({__err:e.message})),
+      loadSheet(sheetId,TABS.schedule),
+      loadSheet(sheetId,TABS.topics).catch(()=>[]),
+      loadSheet(sheetId,TABS.leads).catch(()=>[]),
+    ]).then(([tt,ss,pp,ll])=>{
+      if(!live) return;
+      const err=tt&&tt.__err;
+      setRaw({
+        teachers: err?[]:tt.map(teacherFromRow).filter(t=>t.id),
+        schedule: ss.map(scheduleFromRow).filter(s=>s.teacher),
+        topics:   pp.map(topicFromRow).filter(t=>t.teacher),
+        leads:    ll.map(leadFromRow).filter(l=>l.teacher),
+      });
+      setState({loading:false,error:err?`Вкладка «${TABS.teachers}» не прочиталась. Панель работает, но анкеты пустые.`:null});
+    }).catch(e=>{ if(live) setState({loading:false,error:e.message}); });
+    return ()=>{live=false;};
+  },[sheetId,tick]);
+
+  const teachers=useMemo(()=>{
+    if(raw.teachers.length) return raw.teachers;
+    return [...new Set(raw.schedule.map(s=>s.teacher))].map(id=>teacherFromRow({teacher_id:id,name:id}));
+  },[raw]);
+
+  useEffect(()=>{ if(teachers.length&&!teachers.find(t=>t.id===tid)) setTid(teachers[0].id); },[teachers]);
+  useEffect(()=>{ setCourse("all"); },[tid]);
+  useEffect(()=>{
+    const esc=e=>{ if(e.key==="Escape"){ setShot(false); setZoom(null); } };
+    window.addEventListener("keydown",esc);
+    return ()=>window.removeEventListener("keydown",esc);
+  },[]);
+
+  const t=teachers.find(x=>x.id===tid);
+  const mySlots=raw.schedule.filter(s=>norm(s.teacher)===norm(tid));
+  const myTopics=raw.topics.filter(x=>norm(x.teacher)===norm(tid));
+  const courses=[...new Set([...mySlots.map(s=>s.course),...myTopics.map(x=>x.course)])].filter(Boolean);
+  const slots=course==="all"?mySlots:mySlots.filter(s=>s.course===course);
+  const topics=(course==="all"?myTopics:myTopics.filter(x=>x.course===course))
+    .slice().sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+
+  const stats=useMemo(()=>{
+    const done=topics.filter(x=>topicState(x)==="done").length;
+    const up=topics.find(x=>topicState(x)!=="done");
+    const mainSlots=slots.filter(s=>!isTrial(s.type));
+    const trialSlots=slots.filter(s=>isTrial(s.type));
+    const byCourse={};
+    mainSlots.forEach(s=>{ const c=s.course||"Без потока"; byCourse[c]=(byCourse[c]||0)+1; });
+    return {
+      next:nextLesson(slots), done, total:topics.length,
+      byCourse:Object.entries(byCourse).sort((a,b)=>b[1]-a[1]),
+      trials:trialSlots.length,
+      trialCourses:[...new Set(trialSlots.map(s=>s.course).filter(Boolean))],
+      nextTopic:up?up.topic:"", nextDate:up?up.date:"",
+    };
+  },[slots,topics]);
+
+  const nameOf=id=>(teachers.find(x=>x.id===id)||{}).name||id||"—";
+
+  const askAdmin=()=>{
+    if(admin){setAdmin(false);setView("teachers");return;}
+    const p=prompt("Пароль администратора");
+    if(p===ADMIN_PASSWORD){setAdmin(true);setView("admin");}
+    else if(p!==null) alert("Пароль не подошёл.");
+  };
+
+  const {loading,error}=state;
+
+  return (
+    <div className={"wrap"+(shot?" shot":"")}>
+      {zoom && <div className="lightbox" onClick={()=>setZoom(null)}><img src={zoom} alt="Отзыв"/></div>}
+      {shot && <button className="exit-shot" onClick={()=>setShot(false)}>Выйти из режима скриншота · Esc</button>}
+
+      <div className="top">
+        <div className="logo"><span className="dot"/><b>УМНИКС</b><em>панель ОП</em></div>
+        <div className="top-actions">
+          <button className={"btn"+(view==="teachers"?" on":"")} onClick={()=>setView("teachers")}>Преподаватели</button>
+          <button className={"btn"+(view==="conv"?" on":"")} onClick={()=>setView("conv")}>Конверсия</button>
+          <button className={"btn"+(view==="leads"?" on":"")} onClick={()=>setView("leads")}>Лиды</button>
+          <button className="btn" onClick={()=>setTick(x=>x+1)} title="Перечитать таблицу">↻</button>
+          <button className={"btn"+(shot?" on":"")} onClick={()=>setShot(s=>!s)}>Скриншот</button>
+          <button className={"btn"+(admin?" on":"")} onClick={askAdmin}>{admin?"Выйти":"Админ"}</button>
+        </div>
+      </div>
+
+      {loading && <div className="note">Читаю таблицу…</div>}
+      {error && view!=="admin" && <div className="note err">{error}</div>}
+
+      {view==="teachers" && !loading && (
+        !t ? <div className="note err">Ни одной строки не пришло. Проверь доступ к таблице (Админ).</div> :
+        <>
+          <div className="chipbar">
+            {teachers.map(x=>(
+              <button className={"chip"+(x.id===tid?" on":"")} key={x.id} onClick={()=>setTid(x.id)}>
+                {x.photo?<img src={x.photo} alt=""/>:<span className="ava">{initials(x.name)}</span>}
+                <span>{x.name}</span>
+              </button>
+            ))}
+          </div>
+
+          <Stats stats={stats}/>
+
+          <div className="card">
+            <div className="tabs">
+              {[["info","Инфо"],["schedule","Расписание"],["topics","Темы"],["links","Ссылки"]].map(([k,l])=>(
+                <button key={k} className={"tab"+(tab===k?" on":"")} onClick={()=>setTab(k)}>{l}</button>
+              ))}
+              {courses.length>1 &&
+                <select className="sel no-shot" value={course} onChange={e=>setCourse(e.target.value)}>
+                  <option value="all">Все курсы</option>
+                  {courses.map(c=><option key={c} value={c}>{c}</option>)}
+                </select>}
+            </div>
+            <div className="pad">
+              {tab==="info"     && <InfoTab t={t} onZoom={setZoom}/>}
+              {tab==="schedule" && <ScheduleTab slots={slots} topics={topics}/>}
+              {tab==="topics"   && <TopicsTab topics={topics}/>}
+              {tab==="links"    && <LinksTab slots={slots}/>}
+            </div>
+          </div>
+        </>
+      )}
+
+      {view==="conv" && <div className="card"><div className="pad"><Conversion rows={raw.leads} shot={shot} nameOf={nameOf}/></div></div>}
+
+      {view==="leads" && <div className="card"><div className="pad">
+        <Leads rows={raw.leads} admin={admin} nameOf={nameOf}/>
+        {!admin && <div className="note" style={{marginTop:16}}>Телефоны скрыты. Открой админ-режим, чтобы увидеть целиком.</div>}
+      </div></div>}
+
+      {view==="admin" && admin && <div className="card"><div className="pad cfg">
+        <h3 style={{marginTop:0}}>Настройки</h3>
+        <label>Таблица</label>
+        <input value={sheetId}
+          onChange={e=>{const id=extractId(e.target.value);setSheetId(id);localStorage.setItem("umnix_sheet_id",id);}}
+          placeholder="Вставь ID или всю ссылку"/>
+        <h3 style={{marginTop:24}}>Что загрузилось</h3>
+        <table>
+          <thead><tr><th>Вкладка</th><th>Строк</th><th>Распознано</th></tr></thead>
+          <tbody>
+            <tr><td className="mono">{TABS.teachers}</td><td>{raw.teachers.length}</td><td style={{color:"var(--muted)",fontSize:12}}>{raw.teachers.map(x=>x.id).join(", ")||"—"}</td></tr>
+            <tr><td className="mono">{TABS.schedule}</td><td>{raw.schedule.length}</td><td style={{color:"var(--muted)",fontSize:12}}>{[...new Set(raw.schedule.map(s=>s.course))].join(", ")||"—"}</td></tr>
+            <tr><td className="mono">{TABS.topics}</td><td>{raw.topics.length}</td><td style={{color:"var(--muted)",fontSize:12}}>{raw.topics.filter(x=>topicState(x)==="done").length} прошли · {raw.topics.filter(x=>topicState(x)==="today").length} сегодня</td></tr>
+            <tr><td className="mono">{TABS.leads}</td><td>{raw.leads.length}</td><td style={{color:"var(--muted)",fontSize:12}}>—</td></tr>
+          </tbody>
+        </table>
+        {error && <div className="note err" style={{marginTop:16}}>{error}</div>}
+      </div></div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
